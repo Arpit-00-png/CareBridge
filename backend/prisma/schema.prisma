@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  DOCTOR
+  PATIENT
+  GUARDIAN
+}
+
+enum RelationStatus {
+  ACTIVE
+  REVOKED
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  COMPLETED
+  MISSED
+}
+
+model User {
+  id                   String            @id @default(cuid())
+  name                 String
+  email                String            @unique
+  phone                String?
+  password             String
+  role                 Role
+  isVerified           Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  doctorProfile        DoctorProfile?
+  patientProfile       PatientProfile?
+
+  doctorRelations      Relation[]        @relation("DoctorRelations")
+  patientRelations     Relation[]        @relation("PatientRelations")
+  createdRelations     Relation[]        @relation("CreatedRelations")
+
+  groupMembers         GroupMember[]
+
+  sentMessages         Message[]         @relation("SentMessages")
+  prescriptions        Prescription[]    @relation("DoctorPrescriptions")
+  doctorAppointments   Appointment[]     @relation("DocAppointments")
+  patientAppointments  Appointment[]     @relation("PatAppointments")
+
+  @@map("users")
+}
+
+model DoctorProfile {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id])
+  specialization String
+  hospitalName   String
+  experience     Int?
+  createdAt      DateTime @default(now())
+
+  @@map("doctor_profiles")
+}
+
+model PatientProfile {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id])
+  age              Int
+  address          String
+  emergencyContact String
+  guardianCount    Int      @default(0)
+  createdAt        DateTime @default(now())
+
+  @@map("patient_profiles")
+}
+
+model Relation {
+  id               String           @id @default(cuid())
+  doctorId         String
+  patientId        String
+  createdByAdminId String
+  status           RelationStatus   @default(ACTIVE)
+  revokedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  doctor           User             @relation("DoctorRelations", fields: [doctorId], references: [id])
+  patient          User             @relation("PatientRelations", fields: [patientId], references: [id])
+  createdByAdmin   User             @relation("CreatedRelations", fields: [createdByAdminId], references: [id])
+
+  group            Group?
+  prescriptions    Prescription[]
+  appointments     Appointment[]
+  logs             Log[]
+
+  @@unique([doctorId, patientId])
+  @@map("relations")
+}
+
+model Group {
+  id         String        @id @default(cuid())
+  relationId String        @unique
+  relation   Relation      @relation(fields: [relationId], references: [id])
+
+  members    GroupMember[]
+  messages   Message[]
+
+  @@map("groups")
+}
+
+model GroupMember {
+  id       String   @id @default(cuid())
+  groupId  String
+  userId   String
+  joinedAt DateTime @default(now())
+
+  group    Group    @relation(fields: [groupId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+  @@map("group_members")
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  groupId   String
+  senderId  String
+  type      String   @default("text")
+  content   String
+  timestamp DateTime @default(now())
+
+  group     Group    @relation(fields: [groupId], references: [id])
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([groupId])
+  @@map("messages")
+}
+
+model Prescription {
+  id           String   @id @default(cuid())
+  relationId   String
+  doctorId     String
+  medicineName String
+  dosage       String
+  timing       String
+  instructions String?
+  issuedAt     DateTime @default(now())
+
+  relation     Relation @relation(fields: [relationId], references: [id])
+  doctor       User     @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+
+  @@map("prescriptions")
+}
+
+model Appointment {
+  id            String             @id @default(cuid())
+  relationId    String
+  doctorId      String
+  patientId     String
+  scheduledTime DateTime
+  roomId        String             @unique
+  status        AppointmentStatus  @default(SCHEDULED)
+  createdAt     DateTime           @default(now())
+
+  relation      Relation           @relation(fields: [relationId], references: [id])
+  doctor        User               @relation("DocAppointments", fields: [doctorId], references: [id])
+  patient       User               @relation("PatAppointments", fields: [patientId], references: [id])
+
+  @@map("appointments")
+}
+
+model Log {
+  id          String   @id @default(cuid())
+  relationId  String
+  type        String
+  referenceId String
+  createdAt   DateTime @default(now())
+
+  relation    Relation @relation(fields: [relationId], references: [id])
+
+  @@map("logs")
+}
