@@ -148,3 +148,68 @@ export const revokeRelation = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: { isVerified: true },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true
+      }
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+export const getAllVerifiedUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      where: {
+        isVerified: true,
+        role: {
+          in: ['DOCTOR', 'PATIENT']
+        }
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        isVerified: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export const getAllVerifiedPatients = async (req, res) => {
+  try {
+    const patients = await prisma.user.findMany({
+      where: {
+        role: 'PATIENT',
+        isVerified: true
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true
+      },
+      orderBy: {
+        name: 'asc'
+      }
+    });
+    res.json(patients);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

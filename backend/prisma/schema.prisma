@@ -49,6 +49,9 @@ model User {
   prescriptions        Prescription[]    @relation("DoctorPrescriptions")
   doctorAppointments   Appointment[]     @relation("DocAppointments")
   patientAppointments  Appointment[]     @relation("PatAppointments")
+  doctorRequests  RelationRequest[] @relation("DoctorRequests")
+  patientRequests RelationRequest[] @relation("PatientRequests")
+  patientPrescriptions Prescription[] @relation("PatientPrescriptions")
 
   @@map("users")
 }
@@ -144,16 +147,42 @@ model Prescription {
   id           String   @id @default(cuid())
   relationId   String
   doctorId     String
-  medicineName String
-  dosage       String
-  timing       String
-  instructions String?
+  patientId    String
   issuedAt     DateTime @default(now())
-
+  status       String   @default("ACTIVE") // ACTIVE, COMPLETED, CANCELLED
+  instructions String?
+  
   relation     Relation @relation(fields: [relationId], references: [id])
   doctor       User     @relation("DoctorPrescriptions", fields: [doctorId], references: [id])
+  patient      User     @relation("PatientPrescriptions", fields: [patientId], references: [id])
+  
+  medicines    PrescriptionMedicine[]
 
   @@map("prescriptions")
+}
+
+model PrescriptionMedicine {
+  id           String   @id @default(cuid())
+  prescriptionId String
+  medicineName String
+  dosage       String
+  duration     Int      // in days
+  foodRelation String   // BEFORE_FOOD, AFTER_FOOD, ANYTIME
+  
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+  timings      PrescriptionTiming[]
+
+  @@map("prescription_medicines")
+}
+
+model PrescriptionTiming {
+  id           String   @id @default(cuid())
+  medicineId   String
+  time         String   // "09:00", "14:00", "21:00" format
+  
+  medicine     PrescriptionMedicine @relation(fields: [medicineId], references: [id])
+
+  @@map("prescription_timings")
 }
 
 model Appointment {
@@ -183,4 +212,20 @@ model Log {
   relation    Relation @relation(fields: [relationId], references: [id])
 
   @@map("logs")
+}
+
+
+model RelationRequest {
+  id          String   @id @default(cuid())
+  doctorId    String
+  patientId   String
+  status      String   @default("PENDING")
+  message     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  doctor      User     @relation("DoctorRequests", fields: [doctorId], references: [id])
+  patient     User     @relation("PatientRequests", fields: [patientId], references: [id])
+
+  @@map("relation_requests")
 }
