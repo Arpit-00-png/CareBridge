@@ -45,6 +45,12 @@ const DoctorDashboard = () => {
           <div className="flex items-center gap-4">
             <span>{user?.name}</span>
             <button 
+              onClick={() => navigate('/logs')}
+              className="bg-gray-600 px-4 py-2 rounded hover:bg-gray-700"
+            >
+              📜 Logs
+            </button>
+            <button 
               onClick={() => navigate('/request-relation')}
               className="bg-green-500 px-4 py-2 rounded hover:bg-green-600"
             >

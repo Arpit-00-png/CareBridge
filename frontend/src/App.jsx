@@ -9,6 +9,7 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import RequestRelation from './pages/RequestRelation';
 import Chat from './pages/Chat';
 import VideoCall from './pages/VideoCall';
+import Logs from './pages/Logs';
 
 
 const PatientDashboard = () => (
@@ -54,6 +55,12 @@ function App() {
                 <VideoCall />
               </ProtectedRoute>
             } />
+            <Route path="/logs" element={
+              <ProtectedRoute>
+                <Logs />
+              </ProtectedRoute>
+            } />
+
           </Routes>
         </SocketProvider>
       </AuthProvider>

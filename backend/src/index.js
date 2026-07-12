@@ -11,6 +11,8 @@ import relationRequestRoutes from './routes/relationRequestRoutes.js';
 import chatRoutes from './routes/chatRoutes.js';
 import medicalRoutes from './routes/medicalRoutes.js';
 import { PeerServer } from 'peer';
+import { startReminderService } from './services/reminderService.js';
+import logRoutes from './routes/logRoutes.js';
 
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
@@ -49,6 +51,7 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/relations', relationRequestRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/medical', medicalRoutes);
+app.use('/api/logs', logRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ message: 'Server is running 🚀' });
@@ -101,3 +104,4 @@ server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
   console.log(`✅ Socket.io running on ws://localhost:${PORT}`);
 });
+startReminderService();
