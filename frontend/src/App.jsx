@@ -10,17 +10,15 @@ import RequestRelation from './pages/RequestRelation';
 import Chat from './pages/Chat';
 import VideoCall from './pages/VideoCall';
 import Logs from './pages/Logs';
+import PatientDashboard from './pages/PatientDashboard';
 
 
-const PatientDashboard = () => (
-  <div className="p-8 text-2xl text-purple-600">Patient Dashboard - Coming Soon</div>
-);
 
 const DashboardRouter = () => {
   const { user } = useAuth();
   if (user?.role === 'ADMIN') return <AdminDashboard />;
   if (user?.role === 'DOCTOR') return <DoctorDashboard />;
-  return <PatientDashboard />;
+  if (user?.role === 'PATIENT') return <PatientDashboard />;
 };
 
 function App() {

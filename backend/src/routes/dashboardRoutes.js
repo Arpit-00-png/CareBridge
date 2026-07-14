@@ -5,7 +5,6 @@ import { getDoctorPatients, getPatientDoctors } from '../controllers/dashboardCo
 const router = express.Router();
 
 router.use(authenticate);
-
 router.get('/doctor/patients', getDoctorPatients);
 router.get('/patient/doctors', getPatientDoctors);
 
