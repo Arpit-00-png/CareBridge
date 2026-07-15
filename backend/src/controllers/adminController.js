@@ -41,8 +41,9 @@ export const verifyUser = async (req, res) => {
 export const createRelation = async (req, res) => {
   try {
     const { doctorId, patientId } = req.body;
-    const adminId = req.user.id; 
+    const adminId = req.user.id;
 
+    // Check if already ACTIVE relation exists
     const existing = await prisma.relation.findFirst({
       where: {
         doctorId,
@@ -55,6 +56,7 @@ export const createRelation = async (req, res) => {
     }
 
     const result = await prisma.$transaction(async (tx) => {
+      // 1. Create Relation
       const relation = await tx.relation.create({
         data: {
           doctorId,
@@ -64,12 +66,14 @@ export const createRelation = async (req, res) => {
         }
       });
 
+      // 2. Create Group
       const group = await tx.group.create({
         data: {
           relationId: relation.id
         }
       });
 
+      // 3. Add Doctor and Patient as Group Members
       await tx.groupMember.createMany({
         data: [
           { groupId: group.id, userId: doctorId },
@@ -77,11 +81,38 @@ export const createRelation = async (req, res) => {
         ]
       });
 
-      return { relation, group };
+      // ✅ 4. Add ALL guardians of this patient to the new group
+      const guardians = await tx.user.findMany({
+        where: {
+          role: 'GUARDIAN',
+          groupMembers: {
+            some: {
+              group: {
+                relation: {
+                  patientId: patientId,
+                  status: 'ACTIVE'
+                }
+              }
+            }
+          }
+        },
+        select: { id: true }
+      });
+
+      if (guardians.length > 0) {
+        await tx.groupMember.createMany({
+          data: guardians.map(g => ({
+            groupId: group.id,
+            userId: g.id
+          }))
+        });
+      }
+
+      return { relation, group, guardiansAdded: guardians.length };
     });
 
     res.status(201).json({
-      message: 'Relation created successfully, Group and Members added!',
+      message: `Relation created successfully, ${result.guardiansAdded} guardians added to group!`,
       data: result
     });
 
@@ -89,7 +120,6 @@ export const createRelation = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 export const getRelations = async (req, res) => {
   try {

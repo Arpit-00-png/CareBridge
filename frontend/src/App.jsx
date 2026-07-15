@@ -11,7 +11,7 @@ import Chat from './pages/Chat';
 import VideoCall from './pages/VideoCall';
 import Logs from './pages/Logs';
 import PatientDashboard from './pages/PatientDashboard';
-
+import GuardianDashboard from './pages/GuardianDashboard';
 
 
 const DashboardRouter = () => {
@@ -19,6 +19,7 @@ const DashboardRouter = () => {
   if (user?.role === 'ADMIN') return <AdminDashboard />;
   if (user?.role === 'DOCTOR') return <DoctorDashboard />;
   if (user?.role === 'PATIENT') return <PatientDashboard />;
+  if (user?.role === 'GUARDIAN') return <GuardianDashboard />;
 };
 
 function App() {

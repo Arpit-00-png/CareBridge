@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import AddGuardianModal from '../components/AddGuardianModal';
 
 const PatientDashboard = () => {
   const { user, logout } = useAuth();
@@ -10,6 +11,7 @@ const PatientDashboard = () => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showAddGuardianModal, setShowAddGuardianModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -37,7 +39,7 @@ const PatientDashboard = () => {
     try {
       await api.put(`/medical/appointment/cancel/${appointmentId}`);
       alert('✅ Appointment cancelled successfully');
-      fetchData(); // Refresh
+      fetchData();
     } catch (error) {
       alert(error.response?.data?.error || '❌ Failed to cancel appointment');
     }
@@ -61,6 +63,12 @@ const PatientDashboard = () => {
               📜 Logs
             </button>
             <span>{user?.name}</span>
+            <button
+              onClick={() => setShowAddGuardianModal(true)}
+              className="bg-purple-500 px-4 py-2 rounded hover:bg-purple-600"
+            >
+              + Add Guardian
+            </button>
             <button onClick={handleLogout} className="bg-red-600 px-4 py-2 rounded hover:bg-red-700">
               Logout
             </button>
@@ -118,7 +126,7 @@ const PatientDashboard = () => {
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Medicines List */}
                   <div className="mt-2 space-y-2">
                     {p.medicines && p.medicines.length > 0 ? (
@@ -147,7 +155,7 @@ const PatientDashboard = () => {
                       <p className="text-sm text-gray-500">No medicines listed</p>
                     )}
                   </div>
-                  
+
                   {p.instructions && (
                     <p className="text-sm text-gray-500 mt-2 italic">📝 {p.instructions}</p>
                   )}
@@ -165,11 +173,10 @@ const PatientDashboard = () => {
           ) : (
             <div className="space-y-3">
               {appointments.map(a => (
-                <div key={a.id} className={`flex justify-between items-center p-3 rounded-lg border ${
-                  a.status === 'CANCELLED'
+                <div key={a.id} className={`flex justify-between items-center p-3 rounded-lg border ${a.status === 'CANCELLED'
                     ? 'bg-gray-100 border-gray-300 opacity-60'
                     : 'bg-yellow-50 border-yellow-200'
-                }`}>
+                  }`}>
                   <div>
                     <p className="font-medium">
                       👨‍⚕️ Dr. {a.doctor?.name || 'Unknown'}
@@ -212,6 +219,16 @@ const PatientDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Add Guardian Modal */}
+      {showAddGuardianModal && (
+        <AddGuardianModal
+          onClose={() => setShowAddGuardianModal(false)}
+          onSuccess={() => {
+            fetchData();
+          }}
+        />
+      )}
     </div>
   );
 };

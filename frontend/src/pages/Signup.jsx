@@ -93,6 +93,7 @@ const Signup = () => {
               <option value="PATIENT">Patient</option>
               <option value="DOCTOR">Doctor</option>
               <option value="ADMIN">Admin</option>
+              <option value="GUARDIAN">Guardian</option>
             </select>
           </div>
           <button
