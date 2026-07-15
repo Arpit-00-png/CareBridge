@@ -1,9 +1,11 @@
 import express from 'express';
 import { authenticate, authorize } from '../middlewares/auth.js';
-import { createAppointment, getAppointments } from '../controllers/appointmentController.js';
+import { createAppointment, getAppointments , cancelAppointment, deleteAppointment} from '../controllers/appointmentController.js';
 import { 
   createPrescription, 
-  getPrescriptions
+  getPrescriptions,
+  cancelPrescription,
+  getAllPrescriptionsForRelation
 } from '../controllers/prescriptionController.js';
 import { getPatientPrescriptions, getPatientAppointments } from '../controllers/medicalController.js';
 
@@ -21,6 +23,9 @@ router.post('/prescription', authorize('DOCTOR'), createPrescription);
 router.get('/prescription/:relationId', getPrescriptions);
 
 router.post('/appointment', authorize('DOCTOR'), createAppointment);
+router.delete('/appointment/:appointmentId', authorize('DOCTOR'), deleteAppointment);
 router.get('/appointment/:relationId', getAppointments);
+router.put('/prescription/cancel/:prescriptionId', authorize('DOCTOR'), cancelPrescription); 
+router.get('/prescription/relation/:relationId', getAllPrescriptionsForRelation);
 
 export default router;

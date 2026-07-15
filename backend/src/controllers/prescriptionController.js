@@ -90,3 +90,102 @@ export const getPrescriptions = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+// Cancel prescription (Doctor only)
+export const cancelPrescription = async (req, res) => {
+  try {
+    const { prescriptionId } = req.params;
+    const doctorId = req.user.id;
+
+    // Check if prescription exists and belongs to this doctor
+    const prescription = await prisma.prescription.findFirst({
+      where: {
+        id: prescriptionId,
+        doctorId: doctorId
+      },
+      include: {
+        relation: true,
+        medicines: {
+          include: {
+            timings: true
+          }
+        }
+      }
+    });
+
+    if (!prescription) {
+      return res.status(404).json({ error: 'Prescription not found or unauthorized' });
+    }
+
+    if (prescription.status === 'CANCELLED') {
+      return res.status(400).json({ error: 'Prescription already cancelled' });
+    }
+
+    // Update status to CANCELLED
+    const updatedPrescription = await prisma.prescription.update({
+      where: { id: prescriptionId },
+      data: { status: 'CANCELLED' }
+    });
+
+    // Add to log
+    await prisma.log.create({
+      data: {
+        relationId: prescription.relationId,
+        type: 'PRESCRIPTION_CANCELLED',
+        referenceId: prescriptionId
+      }
+    });
+
+    // Broadcast to chat room that prescription was cancelled
+    // (We'll handle this via socket)
+
+    res.json({
+      message: 'Prescription cancelled successfully',
+      prescription: updatedPrescription
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+// Get all prescriptions for a relation (including cancelled)
+export const getAllPrescriptionsForRelation = async (req, res) => {
+  try {
+    const { relationId } = req.params;
+    const userId = req.user.id;
+
+    // Check access
+    const relation = await prisma.relation.findFirst({
+      where: {
+        id: relationId,
+        OR: [
+          { doctorId: userId },
+          { patientId: userId }
+        ]
+      }
+    });
+
+    if (!relation) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
+    const prescriptions = await prisma.prescription.findMany({
+      where: { relationId },
+      orderBy: { issuedAt: 'desc' },
+      include: {
+        doctor: {
+          select: { id: true, name: true }
+        },
+        medicines: {
+          include: {
+            timings: true
+          }
+        }
+      }
+    });
+
+    res.json(prescriptions);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};

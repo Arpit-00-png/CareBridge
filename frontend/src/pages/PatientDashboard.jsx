@@ -32,6 +32,17 @@ const PatientDashboard = () => {
     }
   };
 
+  const handleCancelAppointment = async (appointmentId) => {
+    if (!confirm('Are you sure you want to cancel this appointment?')) return;
+    try {
+      await api.put(`/medical/appointment/cancel/${appointmentId}`);
+      alert('✅ Appointment cancelled successfully');
+      fetchData(); // Refresh
+    } catch (error) {
+      alert(error.response?.data?.error || '❌ Failed to cancel appointment');
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -154,7 +165,11 @@ const PatientDashboard = () => {
           ) : (
             <div className="space-y-3">
               {appointments.map(a => (
-                <div key={a.id} className="flex justify-between items-center border border-yellow-200 bg-yellow-50 p-3 rounded-lg">
+                <div key={a.id} className={`flex justify-between items-center p-3 rounded-lg border ${
+                  a.status === 'CANCELLED'
+                    ? 'bg-gray-100 border-gray-300 opacity-60'
+                    : 'bg-yellow-50 border-yellow-200'
+                }`}>
                   <div>
                     <p className="font-medium">
                       👨‍⚕️ Dr. {a.doctor?.name || 'Unknown'}
@@ -170,12 +185,27 @@ const PatientDashboard = () => {
                     </p>
                     <p className="text-sm text-gray-600">Status: {a.status}</p>
                   </div>
-                  <a
-                    href={`/call/${a.roomId}`}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
-                  >
-                    Join Call
-                  </a>
+                  <div className="flex gap-2">
+                    {a.status === 'SCHEDULED' && (
+                      <>
+                        <a
+                          href={`/call/${a.roomId}`}
+                          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm"
+                        >
+                          Join Call
+                        </a>
+                        <button
+                          onClick={() => handleCancelAppointment(a.id)}
+                          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 text-sm"
+                        >
+                          Cancel
+                        </button>
+                      </>
+                    )}
+                    {a.status === 'CANCELLED' && (
+                      <span className="text-sm text-gray-500">Cancelled</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
